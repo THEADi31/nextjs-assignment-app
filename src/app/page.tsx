@@ -1,14 +1,15 @@
 import { prisma } from '@/lib/prisma';
-import { MainView } from '../components/MainView';
+import { MainView } from '@/components/MainView';
 
-// Revalidate every 60 seconds (Incremental Static Regeneration)
-export const revalidate = 60;
-
-export default async function HomePage() {
-  // RSC Database Query
-  const menuItems = await prisma.menuItem.findMany({
+async function getMenuItems() {
+  'use cache';
+  return await prisma.menuItem.findMany({
     orderBy: { category: 'asc' },
   });
+}
+
+export default async function HomePage() {
+  const menuItems = await getMenuItems();
 
   return (
     <main className="min-h-screen bg-background text-foreground">

@@ -61,6 +61,7 @@ export async function placeCanteenOrder(data: CreateOrderInput) {
     });
 
     revalidatePath('/');
+    revalidatePath('/admin');
 
     return {
       success: true,
@@ -73,5 +74,31 @@ export async function placeCanteenOrder(data: CreateOrderInput) {
       success: false,
       message: 'Failed to place order. Internal server error.',
     };
+  }
+}
+
+export async function updateOrderStatus(orderId: string, newStatus: string) {
+  try {
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { status: newStatus },
+      include: { user: true },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: updatedOrder.userId,
+        action: 'UPDATE_ORDER_STATUS',
+        details: `Order #${orderId} status changed to ${newStatus}`,
+      },
+    });
+
+    revalidatePath('/admin');
+    revalidatePath('/');
+
+    return { success: true, message: `Order updated to ${newStatus}` };
+  } catch (error) {
+    console.error('Update Status Error:', error);
+    return { success: false, message: 'Failed to update order status' };
   }
 }
