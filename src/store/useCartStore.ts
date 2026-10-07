@@ -6,15 +6,18 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  imageUrl?: string | null;
 }
 
 interface CartState {
   cart: CartItem[];
   pickupSlot: string;
+  activeOrderId: string | null;
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   setPickupSlot: (slot: string) => void;
+  setActiveOrderId: (id: string | null) => void;
   clearCart: () => void;
   getTotalAmount: () => number;
 }
@@ -24,6 +27,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       cart: [],
       pickupSlot: '12:00 PM - 12:30 PM',
+      activeOrderId: null,
       addItem: (item) =>
         set((state) => {
           const existing = state.cart.find((i) => i.id === item.id);
@@ -45,6 +49,7 @@ export const useCartStore = create<CartState>()(
             .filter((i) => i.quantity > 0),
         })),
       setPickupSlot: (pickupSlot) => set({ pickupSlot }),
+      setActiveOrderId: (activeOrderId) => set({ activeOrderId }),
       clearCart: () => set({ cart: [] }),
       getTotalAmount: () =>
         get().cart.reduce((total, item) => total + item.price * item.quantity, 0),

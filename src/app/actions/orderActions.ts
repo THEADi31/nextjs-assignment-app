@@ -60,8 +60,12 @@ export async function placeCanteenOrder(data: CreateOrderInput) {
       },
     });
 
-    revalidatePath('/');
-    revalidatePath('/admin');
+    try {
+      revalidatePath('/');
+      revalidatePath('/admin');
+    } catch {
+      // Safe fallback if called outside Next request context
+    }
 
     return {
       success: true,
@@ -93,12 +97,60 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
       },
     });
 
-    revalidatePath('/admin');
-    revalidatePath('/');
+    try {
+      revalidatePath('/admin');
+      revalidatePath('/');
+    } catch {
+      // Safe fallback if called outside Next request context
+    }
 
     return { success: true, message: `Order updated to ${newStatus}` };
   } catch (error) {
     console.error('Update Status Error:', error);
     return { success: false, message: 'Failed to update order status' };
+  }
+}
+
+export async function getOrderDetails(orderId: string) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: true,
+        items: {
+          include: {
+            menuItem: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return { success: false, message: 'Order not found' };
+    }
+
+    return {
+      success: true,
+      order: {
+        id: order.id,
+        status: order.status,
+        pickupSlot: order.pickupSlot,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt,
+        user: {
+          name: order.user.name,
+          email: order.user.email,
+        },
+        items: order.items.map((i) => ({
+          id: i.id,
+          name: i.menuItem.name,
+          quantity: i.quantity,
+          price: i.unitPrice,
+        })),
+      },
+    };
+  } catch (error) {
+    console.error('Get Order Error:', error);
+    return { success: false, message: 'Failed to retrieve order' };
   }
 }
